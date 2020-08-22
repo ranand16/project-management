@@ -50,12 +50,12 @@ table{
     width: 100%;
 }
 
-.thirteenPercent{
-    width: 13%;
+.fifteenPercent{
+    width: 15% !important;
 }
 
-.sevenPercent{
-    width: 7%;
+.tenPercent{
+    width: 10% !important;
 }
 
 .middleCenter{
@@ -64,7 +64,7 @@ table{
     margin: 0 auto;
     text-align: center;
     left: 0;
-    height: 100%;
+    height: auto;
     top: 50%;
 }
 /* #F7F7F9 */
