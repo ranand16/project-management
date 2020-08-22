@@ -5,6 +5,7 @@ import { Table } from 'antd';
 import ReactDragListView from 'react-drag-listview'; 
 import { ButtonDropdown, DropdownToggle, DropdownItem, DropdownMenu } from 'reactstrap';
 import RemoveModal from './RemoveModal'
+import Tasks from './Tasks'
 
 class Releases extends React.PureComponent {
     constructor(props) {
@@ -62,12 +63,34 @@ class Releases extends React.PureComponent {
             nodeSelector: "tr.ant-table-row"
 
         };
+
+        this.taskcols = [
+            { title: "status", dataIndex: "status" },
+            { title: "description", dataIndex: "description" },
+            { title: "Remove", dataIndex: "key", render: (text, record, index) => 
+                <input id={text} type="submit" className="btn btn-primary" value="Remove" />
+            }
+        ]
+
     }
 
     static getDerivedStateFromProps(props, state) {
         return { releaseData: props.releaseData };
     }
     
+    /**
+     * This function is used to create a random id 
+     */
+    makeid = (length) => {
+        const result           = '';
+        const characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        const charactersLength = characters.length;
+        for ( let i = 0; i < length; i++ ) {
+           result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+        return result;
+    }
+     
     updateDataAfterDragNDrop = (data) => {
         this.props.dragndrop(data);
     }
@@ -86,6 +109,14 @@ class Releases extends React.PureComponent {
     }
 
     /**
+     * This function is called to change the status for a task releated to a particular release
+     */
+    onTaskStatusChange = (e, releaseKey, taskKey) => {
+        console.log(e, releaseKey, taskKey)
+        this.props.changeTaskStatus(releaseKey, taskKey);
+    }
+
+    /**
      * This functon toggles the modal used for removing a task or a section
      */
     toggleRemoveModal = () => {
@@ -97,7 +128,8 @@ class Releases extends React.PureComponent {
      */
     confirmRemoval = () => {
         const { removeType } = this.state;
-        this.props.removeRelease(removeType);
+        this.props.removeRelease(removeType); 
+        this.toggleRemoveModal(); // if removeRelease was a server call we would have used this function in the callback 
     }
 
     /**
@@ -196,9 +228,11 @@ class Releases extends React.PureComponent {
                             <Table
                                 columns={this.columns}
                                 pagination={false}
-                                expandedRowRender={ record => <p style={{ margin: 0 }}>{record.description}</p>}
                                 dataSource={data}
                                 expandable={{ defaultExpandAllRows: false }}
+                                expandedRowRender={ record => <div style={{ margin: 0 }}>{record.tasks.length>0?     
+                                    <Tasks tasks={record.tasks} rKey={record.key} onTaskStatusChange={this.onTaskStatusChange}  />:<></>
+                                }</div>}
                             />
                         </ReactDragListView>
                     </div>
@@ -241,7 +275,8 @@ const mapDispatchToProps = (dispatch) => {
     return {
         dragndrop: (data) => { dispatch({ type: 'DRAG_N_DROP', data }) },
         addRelease: (data) => { dispatch({ type: 'ADD_RELEASE', data }) },
-        removeRelease: (version) => { dispatch({ type: 'DELETE_RELEASE', version }) }
+        removeRelease: (version) => { dispatch({ type: 'DELETE_RELEASE', version }) },
+        changeTaskStatus: (releaseKey, taskKey) => { dispatch({ type: 'CHANGE_TASK_STATUS', checkData: { releaseKey, taskKey } }) }
     }
 }
 
