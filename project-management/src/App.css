@@ -67,7 +67,32 @@ table{
     height: auto;
     top: 50%;
 }
-/* #F7F7F9 */
+
+.released{
+    background: #c1fbbf;
+    padding: 0.1rem 0.3rem;
+}
+
+.unreleased{
+    background: #faeead;
+    padding: 0.1rem 0.3rem;
+}
+
+.inprogress{
+    background: #87d3f8;
+    padding: 0.1rem 0.3rem;
+}
+.progressBar{
+    padding-right: 2rem !important;
+}
+.editSubtext{
+    color: rgb(176, 179, 184);
+    cursor: pointer;
+    font-size: 0.7rem;
+}
+.editSubtext>a{
+    color: #007bff !important;
+}
 @media (min-width: 576px) {
     .header {
         padding: 1rem 3rem !important;

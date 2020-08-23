@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Table } from 'antd';
 
 let onchnagecheckbox, rKey;
@@ -12,17 +12,59 @@ const cols = [
     }
 ]
 
+
 const Tasks = (props) => {
-    const { tasks } = props;
+    const [newTaskValue, setnewTaskValue] = useState("")
+
+    /**
+     * This function is onchange handler for project name edit
+     */
+    const newTaskChange = (e) => {
+        console.log(e.target.value)
+        setnewTaskValue(e.target.value?e.target.value:"")  
+    }
+
+    /**
+     * This function deals with esc and enter button press from keyboard while editing project name
+     */
+    const editedTaskKeyValue = (rKey, e) => {
+        // 27 for esc 13 for enter
+        if(e && e.keyCode){
+            switch(e.keyCode){
+                case 27: // this is escape
+                    cancelNewTask();
+                    break;
+                case 13: // this is confirm
+                    confirmNewTask(rKey)
+                    break
+                default: 
+                    break
+            }
+        }
+    }
+
+    /**
+    * This Single function can be used to handle cancel operation for edit section name or task
+    */
+    const cancelNewTask = (e) => {
+        // console.log(e.currentTarget.getAttribute("name"))
+        if(newTaskValue){
+            setnewTaskValue("")
+        }
+    }
+
+    const confirmNewTask = (rKey) => {
+        console.log(rKey)
+        props.addNewTask(rKey, newTaskValue)
+    }
+
+    const { tasks } = props
     rKey = props.rKey;
     onchnagecheckbox = props.onTaskStatusChange;
     return <React.Fragment>
-        <Table 
-            showHeader = {false}
-            pagination={false}
-            columns = {cols}
-            dataSource = {tasks}
-        />
+        <Table showHeader = {false} pagination={false} columns = {cols} dataSource = {tasks} />
+        <input className="form-control" name="newTaskName" value={newTaskValue} onChange={newTaskChange} onKeyDown={editedTaskKeyValue.bind(this, rKey)} autoFocus />
+        <span className={"editSubtext"}>Press Esc to <a onClick={cancelNewTask} name="newTaskName" >cancel</a> and Enter to <a onClick={confirmNewTask.bind(this, rKey)} name="projectNameEdit">confirm</a>.</span>
     </React.Fragment>
 }
 

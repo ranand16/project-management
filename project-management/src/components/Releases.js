@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import 'antd/dist/antd.css';
 import { Table } from 'antd';
 import ReactDragListView from 'react-drag-listview'; 
-import { ButtonDropdown, DropdownToggle, DropdownItem, DropdownMenu } from 'reactstrap';
+import { ButtonDropdown, DropdownToggle, DropdownItem, DropdownMenu, Progress } from 'reactstrap';
 import RemoveModal from './RemoveModal'
 import Tasks from './Tasks'
 
@@ -31,8 +31,29 @@ class Releases extends React.PureComponent {
                         <path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
                     </svg> {text}</span>
             },
-            { title: "Status", dataIndex: "status", width: "15%" },
-            { title: "Progress", dataIndex: "progress", width: "15%"},
+            { title: "Status", dataIndex: "tasks", width: "15%", render: (data, record, index)=> {
+                let totalTasks = data.length
+                let taskComplete = 0;
+                data.forEach((t)=>{
+                    if(t["status"]) taskComplete++
+                })
+                if(totalTasks === taskComplete) return <span className={"released"}>RELEASED</span>
+                else if(!taskComplete) return <span className={"inprogress"}>IN PROGRESS</span>
+                else return <span className={"unreleased"}>UNRELEASED</span>
+            }},
+            { title: "Progress", dataIndex: "tasks", className: "progressBar", width: "15%", render: (data, record)=> {
+                let totalTasks = data.length
+                let taskComplete = 0;
+                data.forEach((t)=>{
+                    if(t["status"]) taskComplete++
+                })
+                let successBar = (taskComplete/totalTasks)*100 
+                let unsuccessBar = ((totalTasks-taskComplete)/totalTasks)*100 
+                return <Progress style={{ paddingRight: "5px" }} multi>
+                    <Progress bar color="success" value={successBar} />
+                    <Progress bar value={unsuccessBar} />
+                </Progress>
+            }},
             { title: "Start date", dataIndex: "startdate", width: "15%", render:(text, record, index)=> <>{this.parseDate(text)}</> },
             { title: "Release date", dataIndex: "releasedate", width: "15%", render:(text, record, index)=> <>{this.parseDate(text)}</> },
             { title: "Description", dataIndex: "description", width: "15%" },
@@ -82,8 +103,8 @@ class Releases extends React.PureComponent {
      * This function is used to create a random id 
      */
     makeid = (length) => {
-        const result           = '';
-        const characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         const charactersLength = characters.length;
         for ( let i = 0; i < length; i++ ) {
            result += characters.charAt(Math.floor(Math.random() * charactersLength));
@@ -111,9 +132,9 @@ class Releases extends React.PureComponent {
     /**
      * This function is called to change the status for a task releated to a particular release
      */
-    onTaskStatusChange = (e, releaseKey, taskKey) => {
-        console.log(e, releaseKey, taskKey)
-        this.props.changeTaskStatus(releaseKey, taskKey);
+    onTaskStatusChange = (releaseKey, taskKey) => {
+        console.log(releaseKey, taskKey)
+        this.props.changeTaskStatus(releaseKey, taskKey, this.makeid(10));
     }
 
     /**
@@ -199,6 +220,19 @@ class Releases extends React.PureComponent {
 
     /**
      * 
+     * @param {Release to which this task will be added} releaseKey 
+     * @param {Task value} newTaskValue 
+     */
+    addNewTask = (releaseKey, newTaskValue) => {
+        const newTaskObj = Object.create({})
+        newTaskObj["key"] = this.makeid(10)
+        newTaskObj["description"] = newTaskValue
+        newTaskObj["status"] = false
+        this.props.addNewReleaseTask(releaseKey, newTaskObj)
+    }
+
+    /**
+     * 
      * @param {Timestamp will be converted to stringified date to be displayed} timestamp 
      */
     parseDate = (timestamp) => {         
@@ -231,7 +265,7 @@ class Releases extends React.PureComponent {
                                 dataSource={data}
                                 expandable={{ defaultExpandAllRows: false }}
                                 expandedRowRender={ record => <div style={{ margin: 0 }}>{record.tasks.length>0?     
-                                    <Tasks tasks={record.tasks} rKey={record.key} onTaskStatusChange={this.onTaskStatusChange}  />:<></>
+                                    <Tasks tasks={record.tasks} rKey={record.key} onTaskStatusChange={this.onTaskStatusChange} addNewTask={this.addNewTask} />:<></>
                                 }</div>}
                             />
                         </ReactDragListView>
@@ -276,7 +310,9 @@ const mapDispatchToProps = (dispatch) => {
         dragndrop: (data) => { dispatch({ type: 'DRAG_N_DROP', data }) },
         addRelease: (data) => { dispatch({ type: 'ADD_RELEASE', data }) },
         removeRelease: (version) => { dispatch({ type: 'DELETE_RELEASE', version }) },
-        changeTaskStatus: (releaseKey, taskKey) => { dispatch({ type: 'CHANGE_TASK_STATUS', checkData: { releaseKey, taskKey } }) }
+        changeTaskStatus: (releaseKey, taskKey) => { dispatch({ type: 'CHANGE_TASK_STATUS', checkData: { releaseKey, taskKey } }) },
+        addNewReleaseTask: (releaseKey, newTaskObj) => { dispatch({ type: 'ADD_NEW_TASK', taskData: { releaseKey, newTaskObj } }) }
+        
     }
 }
 
