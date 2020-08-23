@@ -23,7 +23,7 @@ body{
     display: flex;
     flex-direction: column;
     overflow: scroll;
-    padding-bottom: 50px !important;
+    padding-bottom: 25px !important;
 }
 #releases{
     overflow: scroll;

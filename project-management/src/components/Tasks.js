@@ -7,9 +7,7 @@ const cols = [
        return <input id={record.key} type="checkbox" checked={text} onChange={onchnagecheckbox.bind(this, rKey, record["key"])} />
     }},
     { title: "description", dataIndex: "description" },
-    { title: "Remove", dataIndex: "key", render: (text, record, index) => 
-        <input id={text} type="submit" className="btn btn-primary" value="Remove" />
-    }
+   
 ]
 
 
@@ -56,6 +54,7 @@ const Tasks = (props) => {
     const confirmNewTask = (rKey) => {
         console.log(rKey)
         props.addNewTask(rKey, newTaskValue)
+        setnewTaskValue("");
     }
 
     const { tasks } = props

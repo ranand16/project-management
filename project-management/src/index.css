@@ -21,16 +21,17 @@ td, th { padding-left: 0px !important;}
 th{ border-top: none !important; background: unset !important; border-bottom: 2px solid #e0e0e0 !important; }
 tr:hover{ background: none !important; }
 td { font-weight: 700; color: #111E6C }
-input[type=text], input[type=date]{
+input[type=text], input[type=date], input[type=text]:focus, input[type=date]:focus{
   font-weight: 500;
   background-color: #eee;
   border: none;
 }
+
 button{
   border: 0px !important;
 }
 
-.form-control:focus , .btn-primary.focus, .btn-primary:focus, input[type=text]:focus, input[type=checkbox]:focus, input[type=radio]:focus{
+.btn-primary.focus, .btn-primary:focus, input[type=checkbox]:focus, input[type=radio]:focus{
   color: none !important;
   background-color: none !important;
   border-color: none !important;

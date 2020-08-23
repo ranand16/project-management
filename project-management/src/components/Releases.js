@@ -6,6 +6,7 @@ import ReactDragListView from 'react-drag-listview';
 import { ButtonDropdown, DropdownToggle, DropdownItem, DropdownMenu, Progress } from 'reactstrap';
 import RemoveModal from './RemoveModal'
 import Tasks from './Tasks'
+import ReleaseEdit from './ReleaseEdit'
 
 class Releases extends React.PureComponent {
     constructor(props) {
@@ -19,7 +20,8 @@ class Releases extends React.PureComponent {
             description: null,
             actionToggle: false,
             removeModalToggle: false,
-            removeType: ""
+            removeType: "",
+            editableRecordData: null
         }
         this.columns = [
             {
@@ -33,6 +35,7 @@ class Releases extends React.PureComponent {
             },
             { title: "Status", dataIndex: "tasks", width: "15%", render: (data, record, index)=> {
                 let totalTasks = data.length
+                if(!totalTasks) return <span className={"inprogress"}>IN PROGRESS</span>
                 let taskComplete = 0;
                 data.forEach((t)=>{
                     if(t["status"]) taskComplete++
@@ -65,7 +68,7 @@ class Releases extends React.PureComponent {
                         </svg>
                     </DropdownToggle>  
                     <DropdownMenu right>
-                        <DropdownItem>Edit</DropdownItem>
+                        <DropdownItem><span onClick={this.editRecordToggle.bind(this, record)}>Edit</span></DropdownItem>
                         <DropdownItem><span onClick={this.removeToogle.bind(this, record["version"])}>Delete</span></DropdownItem>
                     </DropdownMenu>                  
                 </ButtonDropdown>
@@ -111,11 +114,19 @@ class Releases extends React.PureComponent {
         }
         return result;
     }
-     
+
+    /**
+     * 
+     * @param {new data} data 
+     */
     updateDataAfterDragNDrop = (data) => {
         this.props.dragndrop(data);
     }
 
+    /**
+     * 
+     * @param {version key} version 
+     */
     toggleActions = (version) => {
         this.setState(prevState=> {
             if(prevState.actionToggle===version) return { actionToggle: false }
@@ -123,6 +134,32 @@ class Releases extends React.PureComponent {
         })
     }
 
+    /**
+     * 
+     * @param {record is the release data} record 
+     */
+    editRecordToggle = (record, e) => {
+        console.log(record, e)
+        this.setState({ editableRecordData: record })
+    }
+
+    /**
+     * 
+     * @param {new reocrd} record 
+     */
+    saveEditedRecord = (release) => {
+        let { editableRecordData } = this.state;
+        editableRecordData["version"] = release["version"]
+        editableRecordData["startdate"] = release["startdate"]
+        editableRecordData["releasedate"] = release["releasedate"]
+        editableRecordData["description"] = release["description"]
+        this.props.editRelease(editableRecordData);
+    }
+
+    /**
+     * 
+     * @param {version for removing the toggle} version 
+     */
     removeToogle = (version) => {
         console.log(version);
         this.setState({ removeType: version })
@@ -130,7 +167,19 @@ class Releases extends React.PureComponent {
     }
 
     /**
-     * This function is called to change the status for a task releated to a particular release
+     * 
+     * @param {relase key for identifying the release which this task exists} releaseKey 
+     * @param {task key identifying task} taskKey 
+     */
+    removeTaskFromRelease = (releaseKey, taskKey) => {
+        console.log(releaseKey, taskKey)
+        this.props.deleteTask(releaseKey, taskKey);
+    }
+
+    /**
+     * 
+     * @param {relase key for identifying the release which this task exists} releaseKey 
+     * @param {task key identifying task} taskKey 
      */
     onTaskStatusChange = (releaseKey, taskKey) => {
         console.log(releaseKey, taskKey)
@@ -196,7 +245,7 @@ class Releases extends React.PureComponent {
     createReleaseObject = () => {
         const newRelease = Object.create({});
         const { versionName, startDate, releaseDate, description } = this.state;
-        newRelease["key"] = versionName || "Version Name" // used for expanding particular row & validation
+        newRelease["key"] = this.makeid(10);
         newRelease["version"] = versionName || "Version Name"
         newRelease["status"] = "In progress"
         newRelease["progress"] = 0;
@@ -225,7 +274,7 @@ class Releases extends React.PureComponent {
      */
     addNewTask = (releaseKey, newTaskValue) => {
         const newTaskObj = Object.create({})
-        newTaskObj["key"] = this.makeid(10)
+        newTaskObj["key"] = this.makeid(5)
         newTaskObj["description"] = newTaskValue
         newTaskObj["status"] = false
         this.props.addNewReleaseTask(releaseKey, newTaskObj)
@@ -241,11 +290,17 @@ class Releases extends React.PureComponent {
     }
     
     render() {
-        // const { releaseData:data } = this.props;
-        const { releaseData:data, removeModalToggle, removeType } = this.state;
-        console.log(data)
+        const { releaseData:data, removeModalToggle, removeType, editableRecordData } = this.state;
+        console.log(editableRecordData)
         return (
             <div className="parentContainer container-fluid">
+                { editableRecordData &&
+                    <ReleaseEdit 
+                        rData={editableRecordData} 
+                        toggle={this.editRecordToggle.bind(null)} 
+                        saveEditedRecord={this.saveEditedRecord}
+                    /> 
+                }
                 <RemoveModal 
                     isOpen={removeModalToggle} 
                     removeType={removeType}
@@ -264,9 +319,9 @@ class Releases extends React.PureComponent {
                                 pagination={false}
                                 dataSource={data}
                                 expandable={{ defaultExpandAllRows: false }}
-                                expandedRowRender={ record => <div style={{ margin: 0 }}>{record.tasks.length>0?     
-                                    <Tasks tasks={record.tasks} rKey={record.key} onTaskStatusChange={this.onTaskStatusChange} addNewTask={this.addNewTask} />:<></>
-                                }</div>}
+                                expandedRowRender={ record => <div style={{ margin: 0 }}>     
+                                    <Tasks tasks={record.tasks} rKey={record.key} removeTask={this.removeTaskFromRelease} onTaskStatusChange={this.onTaskStatusChange} addNewTask={this.addNewTask} />
+                                </div>}
                             />
                         </ReactDragListView>
                     </div>
@@ -310,8 +365,10 @@ const mapDispatchToProps = (dispatch) => {
         dragndrop: (data) => { dispatch({ type: 'DRAG_N_DROP', data }) },
         addRelease: (data) => { dispatch({ type: 'ADD_RELEASE', data }) },
         removeRelease: (version) => { dispatch({ type: 'DELETE_RELEASE', version }) },
+        editRelease: (newRelease) => { dispatch({ type: 'EDIT_RELEASE', editedRelease: newRelease }) },
         changeTaskStatus: (releaseKey, taskKey) => { dispatch({ type: 'CHANGE_TASK_STATUS', checkData: { releaseKey, taskKey } }) },
-        addNewReleaseTask: (releaseKey, newTaskObj) => { dispatch({ type: 'ADD_NEW_TASK', taskData: { releaseKey, newTaskObj } }) }
+        addNewReleaseTask: (releaseKey, newTaskObj) => { dispatch({ type: 'ADD_NEW_TASK', taskData: { releaseKey, newTaskObj } }) },
+        deleteTask: (releaseKey, taskKey) => { dispatch({ type: 'DELETE_TASK', keys: { releaseKey, taskKey } }) }
         
     }
 }
