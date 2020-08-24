@@ -93,6 +93,14 @@ table{
 .editSubtext>a{
     color: #007bff !important;
 }
+
+.elipsis{
+    max-width: 15%;
+    width: 15%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap
+}
 @media (min-width: 576px) {
     .header {
         padding: 1rem 3rem !important;

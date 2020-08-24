@@ -27,7 +27,8 @@ class Releases extends React.PureComponent {
             {
                 title: "Version name",
                 dataIndex: "version",
-                width: "15%",
+                width: "15%", 
+                className:"elipsis",
                 render: (text, record, index) => <span style={{ cursor: "grab" }} key={index} className="drag-handle" href="#">
                     <svg width="1.4em" height="1.5em" viewBox="0 0 16 16" className="bi bi-grip-horizontal" fill="#b0b0b0" xmlns="http://www.w3.org/2000/svg">
                         <path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
@@ -59,7 +60,7 @@ class Releases extends React.PureComponent {
             }},
             { title: "Start date", dataIndex: "startdate", width: "15%", render:(text, record, index)=> <>{this.parseDate(text)}</> },
             { title: "Release date", dataIndex: "releasedate", width: "15%", render:(text, record, index)=> <>{this.parseDate(text)}</> },
-            { title: "Description", dataIndex: "description", width: "15%" },
+            { title: "Description", dataIndex: "description", className:"elipsis", width: "15%" },
             { title: "Actions", dataIndex: "actions", width: "10%", render:(text, record, index) => 
                 <ButtonDropdown className={"dropDwonMwnu"} isOpen={this.state.actionToggle===record["version"]} toggle={this.toggleActions.bind(this,record["version"])}>
                     <DropdownToggle style={{ color: "grey" }} color="link">
@@ -315,6 +316,7 @@ class Releases extends React.PureComponent {
                     <div id="releases" >
                         <ReactDragListView {...this.dragProps}>
                             <Table
+                                tableLayout={"fixed"}
                                 columns={this.columns}
                                 pagination={false}
                                 dataSource={data}
