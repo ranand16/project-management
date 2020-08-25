@@ -3,11 +3,10 @@ import { Table } from 'antd';
 
 let onchnagecheckbox, rKey;
 const cols = [
-    { title: "status", dataIndex: "status", render: (text, record, i) => {
+    { title: "status", width: "5%", dataIndex: "status", render: (text, record, i) => {
        return <input id={record.key} type="checkbox" checked={text} onChange={onchnagecheckbox.bind(this, rKey, record["key"])} />
     }},
     { title: "description", dataIndex: "description" },
-   
 ]
 
 
@@ -18,7 +17,6 @@ const Tasks = (props) => {
      * This function is onchange handler for project name edit
      */
     const newTaskChange = (e) => {
-        console.log(e.target.value)
         setnewTaskValue(e.target.value?e.target.value:"")  
     }
 
@@ -53,6 +51,7 @@ const Tasks = (props) => {
 
     const confirmNewTask = (rKey) => {
         console.log(rKey)
+        if (newTaskValue === "") return 
         props.addNewTask(rKey, newTaskValue)
         setnewTaskValue("");
     }
@@ -61,7 +60,7 @@ const Tasks = (props) => {
     rKey = props.rKey;
     onchnagecheckbox = props.onTaskStatusChange;
     return <React.Fragment>
-        <Table showHeader = {false} pagination={false} columns = {cols} dataSource = {tasks} />
+        <Table tableLayout={"fixed"} showHeader = {false} pagination={false} columns = {cols} dataSource = {tasks} />
         <input className="form-control" name="newTaskName" value={newTaskValue} onChange={newTaskChange} onKeyDown={editedTaskKeyValue.bind(this, rKey)} autoFocus />
         <span className={"editSubtext"}>Press Esc to <a onClick={cancelNewTask} name="newTaskName" >cancel</a> and Enter to <a onClick={confirmNewTask.bind(this, rKey)} name="projectNameEdit">confirm</a>.</span>
     </React.Fragment>

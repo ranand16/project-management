@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import 'antd/dist/antd.css';
 import { Table } from 'antd';
 import ReactDragListView from 'react-drag-listview'; 
-import { ButtonDropdown, DropdownToggle, DropdownItem, DropdownMenu, Progress } from 'reactstrap';
+import { ButtonDropdown, DropdownToggle, DropdownItem, DropdownMenu, Progress, FormText, Input } from 'reactstrap';
 import RemoveModal from './RemoveModal'
 import Tasks from './Tasks'
 import ReleaseEdit from './ReleaseEdit'
@@ -14,14 +14,15 @@ class Releases extends React.PureComponent {
         // will store data confined to this component only (eg. input fields)
         this.state = { 
             releaseData: [],
-            versionName: null,
-            startDate: null,
-            releaseDate: null,
-            description: null,
+            versionName: "",
+            startDate: "",
+            releaseDate: "",
+            description: "",
             actionToggle: false,
             removeModalToggle: false,
             removeType: "",
-            editableRecordData: null
+            editableRecordData: null,
+            dateFeedback: null
         }
         this.columns = [
             {
@@ -62,15 +63,15 @@ class Releases extends React.PureComponent {
             { title: "Release date", dataIndex: "releasedate", width: "15%", render:(text, record, index)=> <>{this.parseDate(text)}</> },
             { title: "Description", dataIndex: "description", className:"elipsis", width: "15%" },
             { title: "Actions", dataIndex: "actions", width: "10%", render:(text, record, index) => 
-                <ButtonDropdown className={"dropDwonMwnu"} isOpen={this.state.actionToggle===record["version"]} toggle={this.toggleActions.bind(this,record["version"])}>
+                <ButtonDropdown className={"dropDwonMwnu"} isOpen={this.state.actionToggle===record["key"]} toggle={this.toggleActions.bind(this,record["key"])}>
                     <DropdownToggle style={{ color: "grey" }} color="link">
                         <svg width="1em" height="1em" viewBox="0 0 16 16" className="bi bi-three-dots" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                             <path fillRule="evenodd" d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
                         </svg>
                     </DropdownToggle>  
                     <DropdownMenu right>
-                        <DropdownItem><span onClick={this.editRecordToggle.bind(this, record)}>Edit</span></DropdownItem>
-                        <DropdownItem><span onClick={this.removeToogle.bind(this, record["version"])}>Delete</span></DropdownItem>
+                        <DropdownItem onClick={this.editRecordToggle.bind(this, record)}>Edit</DropdownItem>
+                        <DropdownItem onClick={this.removeToogle.bind(this, record["key"])}>Delete</DropdownItem>
                     </DropdownMenu>                  
                 </ButtonDropdown>
             }
@@ -128,10 +129,10 @@ class Releases extends React.PureComponent {
      * 
      * @param {version key} version 
      */
-    toggleActions = (version) => {
+    toggleActions = (key) => {
         this.setState(prevState=> {
-            if(prevState.actionToggle===version) return { actionToggle: false }
-            else return { actionToggle: version }    
+            if(prevState.actionToggle===key) return { actionToggle: false }
+            else return { actionToggle: key }    
         })
     }
 
@@ -140,7 +141,6 @@ class Releases extends React.PureComponent {
      * @param {record is the release data} record 
      */
     editRecordToggle = (record, e) => {
-        console.log(record, e)
         this.setState({ editableRecordData: record })
     }
 
@@ -161,9 +161,8 @@ class Releases extends React.PureComponent {
      * 
      * @param {version for removing the toggle} version 
      */
-    removeToogle = (version) => {
-        console.log(version);
-        this.setState({ removeType: version })
+    removeToogle = (key) => {
+        this.setState({ removeType: key })
         this.toggleRemoveModal();
     }
 
@@ -207,12 +206,7 @@ class Releases extends React.PureComponent {
      * to reset all the feilds in the new release form
      */
     resetNewReleaseForm = () => {
-        this.setState({
-            versionName: null,
-            startDate: null,
-            releaseDate: null,
-            description: null,
-        })
+        this.setState({ startDate: "", releaseDate: "", versionName: "", description: "", dateFeedback: null })
     }
     
     /**
@@ -246,12 +240,13 @@ class Releases extends React.PureComponent {
     createReleaseObject = () => {
         const newRelease = Object.create({});
         const { versionName, startDate, releaseDate, description } = this.state;
-        newRelease["key"] = this.makeid(10);
+        const newRandomKey = this.makeid(10);
+        newRelease["key"] = newRandomKey
         newRelease["version"] = versionName || "Version Name"
         newRelease["status"] = "In progress"
         newRelease["progress"] = 0;
         newRelease["startdate"] = startDate || new Date().getTime()
-        newRelease["releasedate"] = releaseDate || new Date().getTime()
+        newRelease["releasedate"] = releaseDate || new Date().getTime() + 86400000 // adding some time for release
         newRelease["description"] = description || "--"
         newRelease["tasks"] = [];
         return newRelease
@@ -264,8 +259,13 @@ class Releases extends React.PureComponent {
      */
     addVersionRelease = (e) => {
         e.preventDefault()
+        const { startDate, releaseDate } = this.state;
+        if(startDate && releaseDate && startDate >= releaseDate) {
+            this.setState({ dateFeedback: "Start needs to be behind release!" })
+            return
+        }
         this.props.addRelease(this.createReleaseObject())
-        // this.resetNewReleaseForm();
+        this.resetNewReleaseForm();
     }
 
     /**
@@ -287,12 +287,16 @@ class Releases extends React.PureComponent {
      */
     parseDate = (timestamp) => {         
         const dateObj = new Date(timestamp);
-        return (dateObj.getMonth() + 1) + "/" + dateObj.getDate() + "/" + dateObj.getFullYear();
+        const mon = ((dateObj.getMonth() + 1)>9)?(dateObj.getMonth() + 1):("0"+(dateObj.getMonth() + 1))
+        const day = (dateObj.getDate()>9)?(dateObj.getDate()):("0"+dateObj.getDate())
+        const date = dateObj.getFullYear()+"-" + mon + "-"+ day ;
+        return date.trim();
     }
     
     render() {
-        const { releaseData:data, removeModalToggle, removeType, editableRecordData } = this.state;
-        console.log(editableRecordData)
+        const { releaseData:data, removeModalToggle, removeType, editableRecordData, dateFeedback, startDate, releaseDate, versionName, description } = this.state;
+        const showStartDate = startDate!==""?this.parseDate(startDate):""
+        const showReleaseDate = releaseDate!==""?this.parseDate(releaseDate):""
         return (
             <div className="parentContainer container-fluid">
                 { editableRecordData &&
@@ -331,11 +335,27 @@ class Releases extends React.PureComponent {
                         <table>
                             <thead>
                                 <tr>
-                                    <td style={{ width: "45%" }}><input id="versionName" onChange={this.newReleaseOnChangeHandler} type="text" className="form-control" placeholder="Version name" /></td>
-                                    <td className="fifteenPercent"><input id="startDate" onChange={this.newReleaseOnChangeHandler} type="date" className="form-control" placeholder="Start date" /></td>
-                                    <td className="fifteenPercent"><input id="releaseDate" onChange={this.newReleaseOnChangeHandler} type="date" className="form-control" placeholder="Release date" /></td>
-                                    <td className="fifteenPercent"><input id="description" onChange={this.newReleaseOnChangeHandler} type="text" className="form-control" placeholder="Description" /></td>
-                                    <td className="tenPercent"><input id="add" type="submit" className="btn btn-primary" value="Add" /></td>
+                                    <td style={{ width: "45%" }}>
+                                        <input id="versionName" onChange={this.newReleaseOnChangeHandler} value={versionName} type="text" className="form-control" placeholder="Version name" required />
+                                        {/* <FormFeedback>{}</FormFeedback> */}
+                                        <FormText style={{ visibility: "hidden" }}>{"dummy"}</FormText>
+                                    </td>
+                                    <td className="fifteenPercent">
+                                        <Input id="startDate" onChange={this.newReleaseOnChangeHandler} value={showStartDate} type="date" className="form-control" placeholder="Start date" />
+                                        <FormText>{dateFeedback?<span style={{ color: "red" }}>{dateFeedback}</span>:"Default: Today"}</FormText>
+                                    </td>
+                                    <td className="fifteenPercent">
+                                        <input id="releaseDate" onChange={this.newReleaseOnChangeHandler} value={showReleaseDate} type="date" className="form-control" placeholder="Release date" />
+                                        <FormText>{dateFeedback?<span style={{ color: "red" }}>{dateFeedback}</span>:"Default: Tomorrow"}</FormText>
+                                    </td>
+                                    <td className="fifteenPercent">
+                                        <input id="description" onChange={this.newReleaseOnChangeHandler} value={description} type="text" className="form-control" placeholder="Description" />
+                                        <FormText style={{ visibility: "hidden" }}>{"dummy"}</FormText>
+                                    </td>
+                                    <td className="tenPercent">
+                                        <input id="add" type="submit" className="btn btn-primary" value="Add" />
+                                        <FormText style={{ visibility: "hidden" }}>{"dummy"}</FormText>
+                                    </td>
                                 </tr>
                             </thead>
                         </table>
@@ -366,7 +386,7 @@ const mapDispatchToProps = (dispatch) => {
     return {
         dragndrop: (data) => { dispatch({ type: 'DRAG_N_DROP', data }) },
         addRelease: (data) => { dispatch({ type: 'ADD_RELEASE', data }) },
-        removeRelease: (version) => { dispatch({ type: 'DELETE_RELEASE', version }) },
+        removeRelease: (key) => { dispatch({ type: 'DELETE_RELEASE', key }) },
         editRelease: (newRelease) => { dispatch({ type: 'EDIT_RELEASE', editedRelease: newRelease }) },
         changeTaskStatus: (releaseKey, taskKey) => { dispatch({ type: 'CHANGE_TASK_STATUS', checkData: { releaseKey, taskKey } }) },
         addNewReleaseTask: (releaseKey, newTaskObj) => { dispatch({ type: 'ADD_NEW_TASK', taskData: { releaseKey, newTaskObj } }) },

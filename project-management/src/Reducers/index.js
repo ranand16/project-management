@@ -16,7 +16,7 @@ const rootReducer = (state=initState, action) => {
         case "DELETE_RELEASE": 
             const data = [...state.releaseData]
             const index = data.findIndex((release, index)=>{ 
-                if(release["version"]===action["version"]) return index 
+                if(release["key"]===action["key"]) return index 
                 return -1
             })
             if(index>-1) data.splice(index,1)
@@ -37,14 +37,11 @@ const rootReducer = (state=initState, action) => {
             let rdata = [...state.releaseData]
             const { checkData } = action
             const { releaseKey, taskKey } = checkData;
-            console.log(releaseKey, taskKey)
             let release = rdata.find((release)=>release["key"]===releaseKey )
             const releaseKeyIndex = rdata.findIndex((releasedata, index)=> releasedata["key"]===releaseKey)
             if(!release) return null
             let task = release.tasks.find((task)=> task["key"]===taskKey)
             const taskKeyIndex = release.tasks.findIndex((task, index)=>task["key"]===taskKey)
-            console.log(release, task)
-            console.log(releaseKeyIndex, taskKeyIndex)
             if(!task) return null
             task['status'] = !task['status']
             release["tasks"][taskKeyIndex] = task
@@ -60,7 +57,6 @@ const rootReducer = (state=initState, action) => {
             const { releaseKey: rKey, newTaskObj } = taskData;
             let releaseIndex, taskList;
             releaseIndex = reldata.findIndex((release, index)=>release["key"]===rKey)
-            console.log(releaseIndex)
             taskList = [...reldata[releaseIndex]["tasks"], newTaskObj]
             reldata[releaseIndex]["tasks"] = taskList
             return {

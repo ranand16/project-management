@@ -101,6 +101,10 @@ table{
     text-overflow: ellipsis;
     white-space: nowrap
 }
+
+.ant-table-placeholder {
+    display: none !important;
+}
 @media (min-width: 576px) {
     .header {
         padding: 1rem 3rem !important;
